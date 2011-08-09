@@ -3,6 +3,7 @@
 --
 CREATE TABLE IF NOT EXISTS `#__versions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `content_id` int(10) NOT NULL,
   `asset_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'FK to the #__assets table.',
   `title` varchar(255) NOT NULL DEFAULT '',
   `alias` varchar(255) NOT NULL DEFAULT '',
