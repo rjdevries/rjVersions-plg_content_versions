@@ -25,15 +25,15 @@ class plgContentVersions extends JPlugin
          * 3. Clean-Up if there are more versions than the version_limit.
          */
 
-        // Start database instance.
-        $db =& JFactory::getDBO();
-
-
         // Get content from the database
         $contentId = (int)$article->id;
-        $sql = "SELECT `introtext` , `fulltext` FROM #__content WHERE `id` = $contentId";
-        $db->setQuery($sql);
-        $db->Query($sql);
+        $db = JFactory::getDbo();
+        $query = $db->getQuery(true);
+        $query->select('`introtext` , `fulltext`')
+                ->from('#__content')
+                ->where('id = '.(int) $contentId);
+        $db->setQuery($query);
+        $db->Query($query);
         $dbcontent = $db->loadRow();
         $dbcontent = $dbcontent['0'].$dbcontent['1'];
         
