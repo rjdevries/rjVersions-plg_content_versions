@@ -18,7 +18,7 @@
     <languages folder="languages">
         <language tag="nl-NL">nl-NL.plg_content_versions.ini</language>
         <language tag="nl-NL">nl-NL.plg_content_versions.sys.ini</language>
-		<language tag="en-GB">en-GB.plg_content_versions.ini</language>
+	<language tag="en-GB">en-GB.plg_content_versions.ini</language>
         <language tag="en-GB">en-GB.plg_content_versions.sys.ini</language>
     </languages>
 
@@ -29,6 +29,13 @@
     <uninstall>
         <sql><file charset="utf8" driver="mysql">sql/uninstall.sql</file></sql>
     </uninstall>
+
+    <update>
+	<schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+	</schemas>
+    </update>
+
 
     <config>
         <fields name="params">
