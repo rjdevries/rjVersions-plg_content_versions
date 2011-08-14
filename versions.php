@@ -16,7 +16,22 @@ class plgContentVersions extends JPlugin
 
     }
 
+    public function makeCopy ($id) {
+        
+        $db = JFactory::getDbo();
+        $query = $db->getQuery(true);
+        $query->select('*')
+              ->from('#__content')
+              ->where('id = '.(int)$id);
+        $db->setQuery($query);
+        $db->Query($query);
+        $dbcontent = $db->loadObject();
+        $db->insertObject('#__versions', $dbcontent);
+        
+    }
+    
     public function onContentBeforeSave($context, &$article, $isNew) {
+        
         /*
          * 1. Compair the current article content against the content in the editor.
          *    Do nothing when there are no changes
@@ -26,12 +41,12 @@ class plgContentVersions extends JPlugin
          */
 
         // Get content from the database
-        $contentId = (int)$article->id;
+        $id = (int)$article->id;
         $db = JFactory::getDbo();
         $query = $db->getQuery(true);
-        $query->select('`introtext` , `fulltext`')
+        $query->select('\'introtext\', \'fulltext\'')
                 ->from('#__content')
-                ->where('id = '.(int) $contentId);
+                ->where('id = '.(int) $id);
         $db->setQuery($query);
         $db->Query($query);
         $dbcontent = $db->loadRow();
@@ -44,38 +59,50 @@ class plgContentVersions extends JPlugin
         // Exit the function by no changes
         if(strcmp($dbcontent, $edcontent) == 0) { return 0; }
              
-
         // Make Copy
-        if(($article->id > 0) || (!$isNew)){
-
-            $contentId = (int)$article->id;
-            $sql = "INSERT INTO #__versions (`content_id` , `asset_id` , `title` , `alias` , `title_alias` , `introtext` , `fulltext` , `state` , `sectionid` , `mask` , `catid` , `created` , `created_by` , `created_by_alias` , `modified` , `modified_by` , `checked_out` , `checked_out_time` , `publish_up` , `publish_down` , `images` , `urls` , `attribs` , `version` , `parentid` , `ordering` , `metakey` , `metadesc` , `access` , `hits` , `metadata` , `featured` , `language` , `xreference`)
-                    SELECT `id` , `asset_id` , `title` , `alias` , `title_alias` , `introtext` , `fulltext` , `state` , `sectionid` , `mask` , `catid` , `created` , `created_by` , `created_by_alias` , `modified` , `modified_by` , `checked_out` , `checked_out_time` , `publish_up` , `publish_down` , `images` , `urls` , `attribs` , `version` , `parentid` , `ordering` , `metakey` , `metadesc` , `access` , `hits` , `metadata` , `featured` , `language` , `xreference`
-                    FROM #__content WHERE `id` = $contentId";
-            $db->setQuery($sql);
-            $db->Query($sql);
-
-        }
-
+        if(($article->id > 0) || (!$isNew)){ $this->makeCopy($id); }
 
         // Clean-Up
         $version_limit = $this->params->def('version_limit');
 
-        // Create temp table
-        $sql = "CREATE TEMPORARY TABLE #__versions_tmp (id INT(10))";
+        // Create temp table.
+        // Create is not supported in the JDatabaseQuery class.
+        // And "CREATE TEMPORARY" (mysql) is not compatible with other sql-servers like Oracle and MSSQL.
+        $sql = "CREATE TABLE #__versions_tmp (vid INT(10))";
         $db->setQuery($sql);
         $db->Query($sql);
 
         // Put latest id's into the temp table
-        $sql = "INSERT INTO #__versions_tmp (`id`) SELECT `id` FROM #__versions WHERE `content_id` = $contentId order by `id` DESC LIMIT $version_limit";
+        // Select them
+        $query = $db->getQuery(true);
+        $query->select('vid')
+          ->from('#__versions')
+          ->where('id = '.(int)$id)
+          ->order('vid DESC LIMIT '.(int)$version_limit);
+        $db->setQuery($query);
+        $db->Query($query);
+        $dbcontent = $db->loadResultArray();
+        // Insert them
+        $tuples = array();
+        foreach($dbcontent as $vid) {
+            $tuples[] = '('.$vid.')';
+        }
+        $query = $db->getQuery(true);
+        $query->insert('#__versions_tmp');
+        $query->values($tuples);
+        $db->setQuery($query);
+        $db->Query($query);
+
+        // Delete all rows from #__versions where id is not in #__versions_tmp table
+        $sql = "DELETE FROM #__versions WHERE `vid` NOT IN (SELECT `vid` FROM #__versions_tmp)";
         $db->setQuery($sql);
         $db->Query($sql);
 
-        // Delete all rows from #__versions where id is not in temp table
-        $sql = "DELETE FROM #__versions WHERE `id` NOT IN (SELECT `id` FROM #__versions_tmp)";
+        // Drop temp table
+        $sql = "DROP TABLE #__versions_tmp";
         $db->setQuery($sql);
         $db->Query($sql);
-
+        
         return true;
 
     }
@@ -89,21 +116,20 @@ class plgContentVersions extends JPlugin
 
         // Start database instance.
         $db =& JFactory::getDBO();
+        $id = $data->id;
+        if($id > 0) {
 
-        $contentId = $data->id;
-        if($contentId > 0) {
+            // Make copy before deletion
+            $this->makeCopy($id);
 
-            // Make Copy
-            $sql = "INSERT INTO #__versions (`content_id` , `asset_id` , `title` , `alias` , `title_alias` , `introtext` , `fulltext` , `state` , `sectionid` , `mask` , `catid` , `created` , `created_by` , `created_by_alias` , `modified` , `modified_by` , `checked_out` , `checked_out_time` , `publish_up` , `publish_down` , `images` , `urls` , `attribs` , `version` , `parentid` , `ordering` , `metakey` , `metadesc` , `access` , `hits` , `metadata` , `featured` , `language` , `xreference`)
-                    SELECT `id` , `asset_id` , `title` , `alias` , `title_alias` , `introtext` , `fulltext` , `state` , `sectionid` , `mask` , `catid` , `created` , `created_by` , `created_by_alias` , `modified` , `modified_by` , `checked_out` , `checked_out_time` , `publish_up` , `publish_down` , `images` , `urls` , `attribs` , `version` , `parentid` , `ordering` , `metakey` , `metadesc` , `access` , `hits` , `metadata` , `featured` , `language` , `xreference`
-                    FROM #__content WHERE `id` = $contentId";
-            $db->setQuery($sql);
-            $db->Query($sql);
-
-            // Set versions state
-            $sql = "DELETE FROM #__versions WHERE `state` != '-2' AND `content_id` = $contentId";
-            $db->setQuery($sql);
-            $db->Query($sql);
+            // Only save the last version. Delete the other versions
+            $query = $db->getQuery(true);
+            $query->from('#__versions');
+            $query->delete();
+            $query->where('state != \'-2\'');
+            $query->where('id = '.(int)$id);
+            $db->setQuery($query);
+            $db->Query($query);
             
         }
 
