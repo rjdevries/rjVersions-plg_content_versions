@@ -1,9 +1,10 @@
 --
 -- Create table `#__versions`
 --
+
 CREATE TABLE IF NOT EXISTS `#__versions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `content_id` int(10) NOT NULL,
+  `vid` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `id` int(10) NOT NULL,
   `asset_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'FK to the #__assets table.',
   `title` varchar(255) NOT NULL DEFAULT '',
   `alias` varchar(255) NOT NULL DEFAULT '',
@@ -37,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `#__versions` (
   `featured` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Set if article is featured.',
   `language` char(7) NOT NULL COMMENT 'The language code for the article.',
   `xreference` varchar(50) NOT NULL COMMENT 'A reference to enable linkages to external data sets.',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`vid`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_state` (`state`),
