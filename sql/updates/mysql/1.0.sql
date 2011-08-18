@@ -1,2 +1,1 @@
-ALTER TABLE  `#__versions` CHANGE  `id`  `vid` INT( 10 ) UNSIGNED NOT NULL AUTO_INCREMENT
-ALTER TABLE  `#__versions` CHANGE  `content_id`  `id` INT( 10 ) NOT NULL
+ALTER TABLE  `#__versions` CHANGE  `vid`  `vid` INT( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT

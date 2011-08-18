@@ -45,8 +45,8 @@ class plgContentVersions extends JPlugin
         $db = JFactory::getDbo();
         $query = $db->getQuery(true);
         $query->select('\'introtext\', \'fulltext\'')
-                ->from('#__content')
-                ->where('id = '.(int) $id);
+              ->from('#__content')
+              ->where('id = '.(int) $id);
         $db->setQuery($query);
         $db->Query($query);
         $dbcontent = $db->loadRow();
@@ -68,6 +68,7 @@ class plgContentVersions extends JPlugin
         // Create temp table.
         // Create is not supported in the JDatabaseQuery class.
         // And "CREATE TEMPORARY" (mysql) is not compatible with other sql-servers like Oracle and MSSQL.
+        // Therefor we have to make a new table and drop it at the end.
         $sql = "CREATE TABLE #__versions_tmp (vid INT(10))";
         $db->setQuery($sql);
         $db->Query($sql);
@@ -76,9 +77,9 @@ class plgContentVersions extends JPlugin
         // Select them
         $query = $db->getQuery(true);
         $query->select('vid')
-          ->from('#__versions')
-          ->where('id = '.(int)$id)
-          ->order('vid DESC LIMIT '.(int)$version_limit);
+              ->from('#__versions')
+              ->where('id = '.(int)$id)
+              ->order('vid DESC LIMIT '.(int)$version_limit);
         $db->setQuery($query);
         $db->Query($query);
         $dbcontent = $db->loadResultArray();
@@ -94,15 +95,27 @@ class plgContentVersions extends JPlugin
         $db->Query($query);
 
         // Delete all rows from #__versions where id is not in #__versions_tmp table
-        $sql = "DELETE FROM #__versions WHERE `vid` NOT IN (SELECT `vid` FROM #__versions_tmp)";
-        $db->setQuery($sql);
-        $db->Query($sql);
+        // Select rows
+        $query = $db->getQuery(true);
+        $query->select('vid')
+              ->from('#__versions_tmp');
+        $db->setQuery($query);
+        $db->Query($query);
+        $dbvid = $db->loadResultArray();
+
+        // Delete rows
+        $query = $db->getQuery(true);
+        $query->delete('#__versions');
+        foreach ($dbvid as $vid) {
+            $query->where('vid NOT IN ('.$vid.')');
+        }
+        $db->setQuery($query);
+        $db->Query($query);
 
         // Drop temp table
         $sql = "DROP TABLE #__versions_tmp";
         $db->setQuery($sql);
         $db->Query($sql);
-        
         return true;
 
     }
