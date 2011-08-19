@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `#__versions` (
   `featured` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT 'Set if article is featured.',
   `language` char(7) NOT NULL COMMENT 'The language code for the article.',
   `xreference` varchar(50) NOT NULL COMMENT 'A reference to enable linkages to external data sets.',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`vid`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_state` (`state`),
