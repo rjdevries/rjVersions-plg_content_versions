@@ -1,1 +1,0 @@
-ALTER TABLE  `#__versions` CHANGE  `vid`  `vid` INT( 11 ) UNSIGNED NOT NULL AUTO_INCREMENT
