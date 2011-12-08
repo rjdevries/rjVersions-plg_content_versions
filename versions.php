@@ -1,4 +1,12 @@
 <?php
+/*------------------------------------------------------------------------
+# plg_content_versions - rjVersions plugin
+# ------------------------------------------------------------------------
+# author    Ronald J. de Vries
+# @license - http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
+# Websites: http://www.rjdev.nl
+# Technical Support:  Forum - http://www.rjdev.nl
+-------------------------------------------------------------------------*/
 // no direct access
 defined( '_JEXEC' ) or die( 'Restricted access' );
 
@@ -26,6 +34,13 @@ class plgContentVersions extends JPlugin
         $db->setQuery($query);
         $db->Query($query);
         $dbcontent = $db->loadObject();
+	// Set modified & modified_by to created & created_by when modified_by is 0
+        // This is needed because com_versions/views/versions/view.html.php getVersions queries on modified & modified_by
+        // to get the username of the user that made the article or modified it.
+        if($dbcontent->modified_by == 0) {
+            $dbcontent->modified = $dbcontent->created;
+            $dbcontent->modified_by = $dbcontent->created_by;
+        }
         $db->insertObject('#__versions', $dbcontent);
         
     }
@@ -104,13 +119,15 @@ class plgContentVersions extends JPlugin
         $dbvid = $db->loadResultArray();
 
         // Delete rows
-        $query = $db->getQuery(true);
-        $query->delete('#__versions');
-        foreach ($dbvid as $vid) {
-            $query->where('vid NOT IN ('.$vid.')');
-        }
-        $db->setQuery($query);
-        $db->Query($query);
+        if(!empty ($dbvid[0])) { // When the versions table is empty the 'where' fails and it would not be needed to delete.
+            $query = $db->getQuery(true);
+            $query->delete('#__versions');
+            foreach ($dbvid as $vid) {
+                $query->where('vid NOT IN ('.$vid.')');
+            }
+            $db->setQuery($query);
+            $db->Query($query);
+	}
 
         // Drop temp table
         $sql = "DROP TABLE #__versions_tmp";
